@@ -18,9 +18,11 @@ int main()
     //a.CallGraph();
 */
 
-    Diff a(DEFAULT_INPUT);
-    int x = a.IdentifyData("+", "y");
-    std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << x << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
+    Diff a(DEFAULT_INPUT, "x");
+    //double value = 0;
+    //int type = 0;
+    //int x = a.IdentifyData(" 345.5 ", "y", &value, &type);
+    //std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << value << "\n" << type  << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
 
-    //a.tree.CallGraph();
+    a.tree.CallGraph();
 }

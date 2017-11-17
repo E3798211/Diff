@@ -2,6 +2,8 @@
 #define ERRORS_H_INCLUDED
 
 enum ErrorCodes {
+    UNIDENTIFIED_DATA   = -8,
+
     ALLOC_ERROR         = -7,
 
     FILE_NOT_OPENED     = -6,

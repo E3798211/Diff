@@ -73,39 +73,52 @@ public:
 
     /// Identifies data type
     /**
+        Returns error code
+
         \warning data and cur_var will be changed if spaces would be found in the beginning and the end
 
         \param [in] data            Data you want to identify
-        \param [in] cur_var         Current varriable
+        \param [in] cur_var         Current variable
+        \param [out] data_value     Data converted to double (if needed, 0 otherwise)
+        \param [out] data_type      Type of data
     */
-    int IdentifyData(char* data, char* cur_var);
+    int IdentifyData(char* data, char* cur_var, double* data_value, int* data_type);
 
     /// Appends node with data from file
     /**
         \param [in] data            String with data
         \param [in] app_node        Pointer to the node to be appended
         \param [in] place_in_data   Place in data where to look for data
+        \param [in] current_var     Current variable
     */
-    int AppendNode(char* data, int* place_in_data, Node* app_node);
+    int AppendNode(char* data, int* place_in_data, Node* app_node, char* current_var);
 
     /// Loads data from database and creates tree
     /**
         \param [in] filename        Name of the data file
+        \param [in] current_var     Current variable
     */
-    int LoadData(const char* filename);
+    int LoadData(const char* filename, char* current_var);
 
 public:
     /// Constructor
     /**
         \param [in] filename        Name of the file with data
+        \param [in] current_var     Current variable
     */
-    Diff(const char* filename);
+    Diff(const char* filename, char* current_var);
 
     /// Default destructor
     ~Diff();
 };
 
 
+/// "Clears" data
+/**
+    Deletes spaces and turnes every letter to lower case
+
+    \param [in, out] data           Data to be cleared
+*/
 char* ClearData(const char* data);
 
 

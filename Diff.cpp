@@ -88,7 +88,10 @@ char* ClearData(const char* data)
     clear_data[clear_data_len] = '\0';
 
     beg = 0;
-    while(data[beg] != '\0')        tolower(data[beg++]);
+    while(clear_data[beg] != '\0'){
+        clear_data[beg] = tolower(clear_data[beg]);
+        beg++;
+    }
 
     PrintVar(clear_data_len);
     PrintVar(clear_data);
@@ -162,12 +165,14 @@ char* Diff::FileRead(FILE* input)
     return data;
 }
 
-int Diff::IdentifyData(char* data, char* cur_var)
+int Diff::IdentifyData(char* data, char* cur_var, double* data_value, int* data_type)
 {
     EnterFunction();
 
     assert(data != nullptr);
     assert(cur_var != nullptr);
+    assert(data_value != nullptr);
+    assert(data_type != nullptr);
 
     // =================================================
 
@@ -175,28 +180,64 @@ int Diff::IdentifyData(char* data, char* cur_var)
     char* clear_cur_var = ClearData(cur_var);
 
     // =================================================
+
     //
     // Macro-subst here
     //
+    if(clear_data == nullptr || clear_cur_var == nullptr){
+        SetColor(BLUE);
+        DEBUG printf("=====   Data is wrong   =====\n");
+        SetColor(DEFAULT);
 
-    if(!strcmp(clear_data, clear_cur_var))          return VARIABLE;
+        *data_value = 0;
+        *data_type  = UNEXPECTED;
+
+        return UNIDENTIFIED_DATA;
+    }
+
+    if(!strcmp(clear_data, clear_cur_var))          //return VARIABLE;
+    {
+        *data_value = 0;
+        *data_type  = VARIABLE;
+
+        PrintVar(*data_value);
+        PrintVar(*data_type);
+
+        return OK;
+    }
 
     #define OP( exp )\
-        else if (!strcmp( clear_data , exp ))       return OPERATION;
+        else if (!strcmp( clear_data , exp ))                               \
+        {    \
+            *data_value = exp##_CODE;                                       \
+            *data_type  = OPERATION;                                        \
+                                                                            \
+            return OK;                                                      \
+        }
+
     if(0){}
 
     #include "Operations.h"
 
     #undef OP
 
-    if(IsNum(clear_data))                           return CONSTANT;
+    if(IsNum(clear_data))
+    {
+        *data_value = atof(clear_data);
+        *data_type  = CONSTANT;
+
+        PrintVar(*data_value);
+        PrintVar(*data_type);
+
+        return OK;
+    }
 
     // If nothing fitted
     QuitFunction();
-    return UNEXPECTED;
+    return UNIDENTIFIED_DATA;
 }
 
-int Diff::AppendNode(char* data, int* place_in_data, Node* app_node)
+int Diff::AppendNode(char* data, int* place_in_data, Node* app_node, char* current_var)
 {
     EnterFunction();
 
@@ -233,12 +274,20 @@ int Diff::AppendNode(char* data, int* place_in_data, Node* app_node)
     PrintVar(node_text);
     PrintVar(*place_in_data);
 
-    double node_num = atof(node_text);
-
     // HERE
     // Add data type
 
-    tree.SetData(app_node, node_num, 0);
+    double data_value = 0;
+    int    data_type  = 0;
+    if(IdentifyData(node_text, current_var, &data_value, &data_type) == UNIDENTIFIED_DATA){
+        SetColor(BLUE);
+        DEBUG printf("Invalid argument \"%s\"\n", node_text);
+        SetColor(DEFAULT);
+
+        return UNIDENTIFIED_DATA;
+    }
+
+    tree.SetData(app_node, data_value, data_type);
 
     bool left_added = false;
     while(data[(*place_in_data)] != ')'){
@@ -246,14 +295,14 @@ int Diff::AppendNode(char* data, int* place_in_data, Node* app_node)
             if(!left_added){
                 // HERE
                 app_node->left = tree.CreateNode(app_node, false);
-                AppendNode(data, place_in_data, app_node->left);
+                AppendNode(data, place_in_data, app_node->left, current_var);
 
                 left_added = true;
 
             }else{
                 // HERE
                 app_node->right = tree.CreateNode(app_node, true);
-                AppendNode(data, place_in_data, app_node->right);
+                AppendNode(data, place_in_data, app_node->right, current_var);
             }
         }
         (*place_in_data)++;
@@ -268,7 +317,7 @@ int Diff::AppendNode(char* data, int* place_in_data, Node* app_node)
     return OK;
 }
 
-int Diff::LoadData(const char* filename)
+int Diff::LoadData(const char* filename, char* current_var)
 {
     EnterFunction();
 
@@ -287,7 +336,7 @@ int Diff::LoadData(const char* filename)
     PrintVar(data);
 
     int cur_pos_in_data = 0;        // Counter for AppendNode()
-    AppendNode(data, &cur_pos_in_data, tree.GetRoot());
+    AppendNode(data, &cur_pos_in_data, tree.GetRoot(), current_var);
 
     fclose(database);
 
@@ -297,11 +346,11 @@ int Diff::LoadData(const char* filename)
 
 // =================================================
 
-    Diff::Diff(const char* filename)
+    Diff::Diff(const char* filename, char* current_var)
 {
     EnterFunction();
 
-    LoadData(filename? filename : DEFAULT_INPUT);
+    LoadData(filename? filename : DEFAULT_INPUT, current_var);
 
     QuitFunction();
 }
@@ -311,3 +360,5 @@ int Diff::LoadData(const char* filename)
     EnterFunction();
     QuitFunction();
 }
+
+
