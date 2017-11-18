@@ -5,3 +5,7 @@
 *.cbp
 *.ps
 *.dot
+*.aux
+*.log
+*.tex
+*.dvi

@@ -121,15 +121,6 @@ public:
 
     //int AddRight(Node* app_node, Node** new_ptr);
 
-    /// Creates node.
-    /**
-        Returns nullptr in case of error.
-
-        \param [in] parent          Pointer to the parent
-        \param [in] is_right        Is this node is right or left
-    */
-    Node* CreateNode(Node* parent, const bool is_right = true);
-
     /// Set data
     /**
         Returns error code
@@ -165,9 +156,20 @@ public:
     int CallGraph();
 
 
-    // Verificator
-    // Dump()       ? done?
+
+
+    /// Creates node.
+    /**
+        Returns nullptr in case of error.
+
+        \param [in] parent          Pointer to the parent
+        \param [in] is_right        Is this node is right or left
+    */
+    friend Node* CreateNode(Tree& tree, Node* parent = nullptr, const bool is_right = true);
 
 };
+
+
+    //Node* CreateNode(Node* parent = nullptr, const bool is_right = true);
 
 #endif // TREE_H_INCLUDED

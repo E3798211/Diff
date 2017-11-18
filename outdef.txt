@@ -1,0 +1,8 @@
+\documentclass{article}
+\begin{document}
+
+$$
+	((x*(45/15))*(sin((ln(45)))))
+$$
+
+\end{document}

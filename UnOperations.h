@@ -1,9 +1,4 @@
 
-OP(SUM)
-OP(SUB)
-OP(MULT)
-OP(DIV)
-
 OP(SIN)
 OP(COS)
 OP(TAN)
@@ -14,6 +9,5 @@ OP(ACOS)
 OP(ATAN)
 OP(ACTN)
 
-OP(POW)
 OP(LN)
 OP(EXP)

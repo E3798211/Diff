@@ -8,30 +8,38 @@
 // =================================================
 
 const char  DEFAULT_INPUT[] = "datadef.txt";
+const char DEFAULT_OUTPUT[] = "outdef.txt";
 
 // =================================================
 
 enum EQUATION_PARTS {
-     VARIABLE = 1,
-     CONSTANT = 2,
-    OPERATION = 3,
+        VARIABLE = 1,
+        CONSTANT = 2,
+    UN_OPERATION = 3,
+    BIN_OPERATION = 4,
 
     UNEXPECTED
 };
 
-enum OPERATION_CODES {
+enum UN_OPERATION_CODES {
     #define OP( exp ) exp##_CODE ,
-
-    #include "Operations.h"
-
+    #include "UnOperations.h"
     #undef OP
-    MAX_CODE
+    MAX_UN_CODE
+};
+
+enum BIN_OPERATION_CODES {
+    #define OP( exp ) exp##_CODE ,
+    #include "BinOperations.h"
+    #undef OP
+    MAX_BIN_CODE
 };
 
 const char  SUM[] = "+";
 const char  SUB[] = "-";
 const char MULT[] = "*";
 const char  DIV[] = "/";
+const char  POW[] = "^";
 
 const char  SIN[] = "sin";
 const char  COS[] = "cos";
@@ -43,8 +51,8 @@ const char ACOS[] = "acos";
 const char ATAN[] = "atan";
 const char ACTN[] = "actn";
 
-const char  POW[] = "^";
 const char   LN[] = "ln";
+const char  EXP[] = "exp";
 
 // =================================================
 
@@ -52,7 +60,18 @@ class Diff {
 //private:
 public:
     /// Main tree
-    Tree tree;
+    Tree source;
+
+    /// Destination tree
+    Tree dest;
+
+    /// Varriable
+    char variable[100] = {};
+
+    /// Status
+    bool differentiated_successfully = false;
+
+    // =============================================
 
     /// Creates align
     /**
@@ -100,6 +119,22 @@ public:
     */
     int LoadData(const char* filename, char* current_var);
 
+    /// Prints branch to the file recurcively to the file
+    /**
+        \param [in] output          Output file
+        \param [in] root_node       Root of the branch
+        \param [in] current_var     Current variable
+        \param [in] recursion_depth Depth of the recursion
+    */
+    int PrintBranch(FILE* output, Node* root_node, char* current_var, int recursion_depth = 0);
+
+    /// Loads data to the file
+    /**
+        \param [in] filename        Name of the file to be created
+        \param [in] current_var     Current variable
+    */
+    int UnloadData(const char* filename, char* current_var);
+
 public:
     /// Constructor
     /**
@@ -110,6 +145,9 @@ public:
 
     /// Default destructor
     ~Diff();
+
+    /// Differentiates tree
+    Node* Differetiate(Node* source_root_node, Node* dest_root_node_to_append);
 };
 
 

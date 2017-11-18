@@ -1,4 +1,5 @@
 #include "Diff.h"
+#include "Tree.h"
 
 
 bool IsNum(const char* data)
@@ -100,10 +101,23 @@ char* ClearData(const char* data)
     return clear_data;
 }
 
+int CallLatex(const char* filename)
+{
+    char cmd[1000] = "latex ";
+    strcat(cmd, filename);
+    system(cmd);
+
+    strcpy(cmd, "xdg-open ");
+    strcat(cmd, filename);
+    int cmd_len = strlen(cmd);
+    cmd[cmd_len - 3] = 'd';
+    cmd[cmd_len - 2] = 'v';
+    cmd[cmd_len - 1] = 'i';
+    system(cmd);
+}
 
 
-
-
+// =================================================
 
 int Diff::Align(FILE* output, int depth)
 {
@@ -181,9 +195,6 @@ int Diff::IdentifyData(char* data, char* cur_var, double* data_value, int* data_
 
     // =================================================
 
-    //
-    // Macro-subst here
-    //
     if(clear_data == nullptr || clear_cur_var == nullptr){
         SetColor(BLUE);
         DEBUG printf("=====   Data is wrong   =====\n");
@@ -206,20 +217,37 @@ int Diff::IdentifyData(char* data, char* cur_var, double* data_value, int* data_
         return OK;
     }
 
+    // =================================================    FIRST MACRO-SUBST
+
     #define OP( exp )\
         else if (!strcmp( clear_data , exp ))                               \
         {    \
             *data_value = exp##_CODE;                                       \
-            *data_type  = OPERATION;                                        \
+            *data_type  = UN_OPERATION;                                     \
                                                                             \
             return OK;                                                      \
         }
 
     if(0){}
-
-    #include "Operations.h"
-
+    #include "UnOperations.h"
     #undef OP
+
+    // =================================================    SECOND MACRO-SUBST
+
+    #define OP( exp )\
+        else if (!strcmp( clear_data , exp ))                               \
+        {    \
+            *data_value = exp##_CODE;                                       \
+            *data_type  = BIN_OPERATION;                                     \
+                                                                            \
+            return OK;                                                      \
+        }
+
+    if(0){}
+    #include "BinOperations.h"
+    #undef OP
+
+    // =================================================
 
     if(IsNum(clear_data))
     {
@@ -287,21 +315,21 @@ int Diff::AppendNode(char* data, int* place_in_data, Node* app_node, char* curre
         return UNIDENTIFIED_DATA;
     }
 
-    tree.SetData(app_node, data_value, data_type);
+    source.SetData(app_node, data_value, data_type);
 
     bool left_added = false;
     while(data[(*place_in_data)] != ')'){
         if(data[(*place_in_data)] == '('){
             if(!left_added){
                 // HERE
-                app_node->left = tree.CreateNode(app_node, false);
+                app_node->left = CreateNode(source, app_node, false);
                 AppendNode(data, place_in_data, app_node->left, current_var);
 
                 left_added = true;
 
             }else{
                 // HERE
-                app_node->right = tree.CreateNode(app_node, true);
+                app_node->right = CreateNode(source, app_node, true);
                 AppendNode(data, place_in_data, app_node->right, current_var);
             }
         }
@@ -336,9 +364,130 @@ int Diff::LoadData(const char* filename, char* current_var)
     PrintVar(data);
 
     int cur_pos_in_data = 0;        // Counter for AppendNode()
-    AppendNode(data, &cur_pos_in_data, tree.GetRoot(), current_var);
+    AppendNode(data, &cur_pos_in_data, source.GetRoot(), current_var);
 
     fclose(database);
+
+    QuitFunction();
+    return OK;
+}
+
+int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recursion_depth)
+{
+    EnterFunction();
+
+    assert(output != nullptr);
+    assert(root_node != nullptr);
+
+    PrintVar(root_node->data);
+
+    // Checking if we printing operation, constant or variable:
+    // Un-ops should be printed another way
+
+    if(root_node->data_type == UN_OPERATION){
+
+        // =================================================    UN-OPS MACRO-SUBST
+
+        #define OP( exp )\
+            else if ( exp##_CODE == root_node->data )                           \
+            {                                                                   \
+                fprintf(output, "(%s(", exp );                                   \
+            }
+
+        if(0){}
+        #include "UnOperations.h"
+        #undef OP
+
+        // =================================================
+
+        if(root_node->left != nullptr)
+            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+
+        fprintf(output, "))");
+
+    }else if (root_node->data_type == BIN_OPERATION){
+
+        fprintf(output, "(");
+
+        if(root_node->left != nullptr)
+            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+
+        // =================================================    BIN-OPS MACRO-SUBST
+
+        #define OP( exp )\
+            else if ( exp##_CODE == root_node->data )                           \
+            {                                                                   \
+                fprintf(output, "%s", exp );                                    \
+            }
+
+        if(0){}
+        #include "BinOperations.h"
+        #undef OP
+
+        // =================================================
+
+        if(root_node->right != nullptr)
+            PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
+
+        fprintf(output, ")");
+
+    }else if (root_node->data_type == VARIABLE){
+        // Varriables do not have arguments but they are still printed. Uncomment brackets in case of faults.
+
+        //fprintf(output, "(");
+
+        fprintf(output, "%s", current_var);
+
+        if(root_node->left != nullptr)
+            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+
+        if(root_node->right != nullptr)
+            PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
+
+        //fprintf(output, ")");
+
+    }else{
+        // Here are constants and something I have forgot about
+        // Constants do not have arguments but they are still printed. Uncomment brackets in case of faults.
+
+        //fprintf(output, "(");
+
+        if(root_node->left != nullptr)
+            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+
+        fprintf(output, "%lg", root_node->data);
+
+        if(root_node->right != nullptr)
+            PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
+
+        //fprintf(output, ")");
+    }
+
+    QuitFunction();
+
+    return OK;
+}
+
+int Diff::UnloadData(const char* filename, char* current_var)
+{
+    EnterFunction();
+
+    assert(filename != nullptr);
+
+    FILE* output = fopen(filename, "w");
+    if(output == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Cannot open file %s   =====\n", filename);
+        SetColor(DEFAULT);
+
+        return FILE_NOT_OPENED;
+    }
+
+    fprintf(output, "\\documentclass{article}\n\\begin{document}\n\n$$\n\t");
+    PrintBranch(output, source.GetRoot(), current_var);
+    fprintf(output, "\n$$\n\n\\end{document}\n");
+
+    fclose(output);
 
     QuitFunction();
     return OK;
@@ -350,6 +499,8 @@ int Diff::LoadData(const char* filename, char* current_var)
 {
     EnterFunction();
 
+    strcpy(variable, current_var);
+
     LoadData(filename? filename : DEFAULT_INPUT, current_var);
 
     QuitFunction();
@@ -358,7 +509,82 @@ int Diff::LoadData(const char* filename, char* current_var)
     Diff::~Diff()
 {
     EnterFunction();
+
+    if(differentiated_successfully){
+        UnloadData(DEFAULT_OUTPUT, variable);
+
+        source.CallGraph();
+        CallLatex(DEFAULT_OUTPUT);
+    }else{
+        SetColor(BLUE);
+        printf("Differentiating failed\n");
+        SetColor(DEFAULT);
+    }
+
+    UnloadData(DEFAULT_OUTPUT, variable);
+
+    source.CallGraph();
+    CallLatex(DEFAULT_OUTPUT);
+
     QuitFunction();
 }
+
+// =================================================    BRAIN
+
+Node* Diff::Differetiate(Node* source_root_node, Node* dest_root_node_to_append)
+{
+    EnterFunction();
+
+    assert(source_root_node != nullptr);
+    assert(dest_root_node_to_append != nullptr);
+
+    // =====================================
+
+    switch (source_root_node->data_type)
+    {
+        case UN_OPERATION:
+        {
+            //
+            break;
+        }
+        case BIN_OPERATION:
+        {
+            //
+            break;
+        }
+        case VARIABLE:
+        {
+            //
+            break;
+        }
+        case CONSTANT:
+        {
+            // When we see constant with arguments, cry
+            if(!source.IsLast(source_root_node)){
+                SetColor(BLUE);
+                printf("Unexpected argumend after constant.\n");
+                SetColor(DEFAULT);
+
+                differentiated_successfully = false;
+
+                QuitFunction();
+                return nullptr;
+            }else{
+
+            }
+            break;
+        }
+        default:
+        {
+            SetColor(BLUE);
+            printf("Strange root detected... data type = %d\n", source_root_node->data_type);
+            SetColor(DEFAULT);
+
+            differentiated_successfully = false;
+        }
+    }
+}
+
+
 
 

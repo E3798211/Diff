@@ -63,33 +63,18 @@ int BuildConnections(FILE* output, Node* branch_root)
 
 // =================================================    Create-function
 
-Node* Tree::CreateNode(Node* parent_node, const bool is_right)
+Node* CreateNode(Tree& tree, Node* parent_node, const bool is_right)
 {
     EnterFunction();
 
     PrintVar(parent_node);
     PrintVar(is_right);
 
-    SAFE {
-    if(!NodeExists(root, parent_node)){
-        SetColor(BLUE);
-        USR_INFORM printf("Parent does not exist\n");
-        SetColor(DEFAULT);
-
-        PrintVar(parent_node);
-        PrintVar(is_right);
-
-        QuitFunction();
-        return nullptr;
-    }
-    }
-
-
     Node* new_node = nullptr;
     try
     {
         new_node = new Node;
-        n_nodes++;
+        tree.n_nodes++;
     }
     catch(const std::bad_alloc &ex)
     {
@@ -100,7 +85,7 @@ Node* Tree::CreateNode(Node* parent_node, const bool is_right)
         new_node = nullptr;
 
         PrintVar(new_node);
-        PrintVar(n_nodes);
+        PrintVar(tree.n_nodes);
 
         QuitFunction();
         return nullptr;
@@ -109,7 +94,7 @@ Node* Tree::CreateNode(Node* parent_node, const bool is_right)
     new_node->parent   = parent_node;
     new_node->is_right = is_right;
 
-    PrintVar(n_nodes);
+    PrintVar(tree.n_nodes);
     PrintVar(parent_node);
     PrintVar(is_right);
 
