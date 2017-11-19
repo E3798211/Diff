@@ -8,7 +8,5 @@ int main()
 {
     Diff a(DEFAULT_INPUT, "x");
 
-    a.dest.root = Differetiate(a, a.source.GetRoot());
-
-    a.dest.CallGraph();
+    a.TakeDiff();
 }

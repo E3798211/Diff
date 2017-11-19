@@ -128,6 +128,9 @@ public:
 
     /// Differentiates tree
     friend Node* Differetiate(Diff& d, Node* source_root_node);
+
+    /// Takes diff
+    int TakeDiff();
 };
 
 

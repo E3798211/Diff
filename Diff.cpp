@@ -516,28 +516,28 @@ int Diff::UnloadData(const char* filename, char* current_var)
 {
     EnterFunction();
 
-    /*
     if(differentiated_successfully){
         UnloadData(DEFAULT_OUTPUT, variable);
 
-        source.CallGraph();
+        dest.CallGraph();
         CallLatex(DEFAULT_OUTPUT);
     }else{
         SetColor(BLUE);
         printf("Differentiating failed\n");
         SetColor(DEFAULT);
     }
-    */
-
-    UnloadData(DEFAULT_OUTPUT, variable);
-
-    dest.CallGraph();
-    //source.CallGraph();
-    CallLatex(DEFAULT_OUTPUT);
 
     QuitFunction();
 }
 
+
+int Diff::TakeDiff()
+{
+    dest.root = Differetiate(*this, source.GetRoot());
+    //a.dest.CallGraph();
+
+    return OK;
+}
 // =================================================    BRAIN
 
 #define dL *Differetiate(d, node_to_diff->left)
