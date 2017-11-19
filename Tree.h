@@ -38,6 +38,50 @@
 #include "DebugLib.h"
 
 // =================================================
+
+enum EQUATION_PARTS {
+        VARIABLE = 1,
+        CONSTANT = 2,
+    UN_OPERATION = 3,
+    BIN_OPERATION = 4,
+
+    UNEXPECTED
+};
+
+enum UN_OPERATION_CODES {
+    #define OP( exp ) exp##_CODE ,
+    #include "UnOperations.h"
+    #undef OP
+    MAX_UN_CODE
+};
+
+enum BIN_OPERATION_CODES {
+    #define OP( exp ) exp##_CODE ,
+    #include "BinOperations.h"
+    #undef OP
+    MAX_BIN_CODE
+};
+
+const char  SUM[] = "+";
+const char  SUB[] = "-";
+const char  MUL[] = "*";
+const char  DIV[] = "/";
+const char  POW[] = "^";
+
+const char  SIN[] = "sin";
+const char  COS[] = "cos";
+const char  TAN[] = "tan";
+const char CTAN[] = "ctan";
+
+const char ASIN[] = "asin";
+const char ACOS[] = "acos";
+const char ATAN[] = "atan";
+const char ACTN[] = "actn";
+
+const char   LN[] = "ln";
+const char  EXP[] = "exp";
+
+// =================================================
 typedef double data_t;
 
 const int  LEFT = 0;
@@ -66,6 +110,7 @@ struct Node {
 
 class Tree {
 private:
+public:
     /// Pointer to the first node
     Node* root  = nullptr;
 
@@ -155,8 +200,7 @@ public:
     /// Calls grapic dump
     int CallGraph();
 
-
-
+};
 
     /// Creates node.
     /**
@@ -165,11 +209,13 @@ public:
         \param [in] parent          Pointer to the parent
         \param [in] is_right        Is this node is right or left
     */
-    friend Node* CreateNode(Tree& tree, Node* parent = nullptr, const bool is_right = true);
-
-};
+    Node* CreateNode(Node* parent = nullptr, const bool is_right = true);
 
 
-    //Node* CreateNode(Node* parent = nullptr, const bool is_right = true);
+    Node* operator+ (Node &left, Node &right);
+    Node* operator- (Node &left, Node &right);
+    Node* operator* (Node &left, Node &right);
+    Node* operator/ (Node &left, Node &right);
+    Node* operator^ (Node &left, Node &right);
 
 #endif // TREE_H_INCLUDED

@@ -1,5 +1,5 @@
 #include "Diff.h"
-#include "Tree.h"
+//#include "Tree.h"
 
 
 bool IsNum(const char* data)
@@ -117,8 +117,10 @@ int CallLatex(const char* filename)
 }
 
 
+
 // =================================================
 
+/*
 int Diff::Align(FILE* output, int depth)
 {
     assert(output != nullptr);
@@ -127,6 +129,7 @@ int Diff::Align(FILE* output, int depth)
 
     return depth;
 }
+*/
 
 char* Diff::FileRead(FILE* input)
 {
@@ -322,14 +325,14 @@ int Diff::AppendNode(char* data, int* place_in_data, Node* app_node, char* curre
         if(data[(*place_in_data)] == '('){
             if(!left_added){
                 // HERE
-                app_node->left = CreateNode(source, app_node, false);
+                app_node->left = CreateNode(app_node, false);
                 AppendNode(data, place_in_data, app_node->left, current_var);
 
                 left_added = true;
 
             }else{
                 // HERE
-                app_node->right = CreateNode(source, app_node, true);
+                app_node->right = CreateNode(app_node, true);
                 AppendNode(data, place_in_data, app_node->right, current_var);
             }
         }
@@ -380,18 +383,19 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
     assert(root_node != nullptr);
 
     PrintVar(root_node->data);
+    PrintVar(root_node->data_type);
 
     // Checking if we printing operation, constant or variable:
     // Un-ops should be printed another way
 
     if(root_node->data_type == UN_OPERATION){
-
+        PrintVar(root_node->data_type);
         // =================================================    UN-OPS MACRO-SUBST
 
         #define OP( exp )\
             else if ( exp##_CODE == root_node->data )                           \
             {                                                                   \
-                fprintf(output, "(%s(", exp );                                   \
+                fprintf(output, "{%s(", exp );                                  \
             }
 
         if(0){}
@@ -403,11 +407,11 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         if(root_node->left != nullptr)
             PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
 
-        fprintf(output, "))");
+        fprintf(output, ")}");
 
     }else if (root_node->data_type == BIN_OPERATION){
 
-        fprintf(output, "(");
+        fprintf(output, "{(");
 
         if(root_node->left != nullptr)
             PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
@@ -429,7 +433,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         if(root_node->right != nullptr)
             PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
 
-        fprintf(output, ")");
+        fprintf(output, ")}");
 
     }else if (root_node->data_type == VARIABLE){
         // Varriables do not have arguments but they are still printed. Uncomment brackets in case of faults.
@@ -447,7 +451,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         //fprintf(output, ")");
 
     }else{
-        // Here are constants and something I have forgot about
+        // Here are constants and something I have forgot about if such things exist
         // Constants do not have arguments but they are still printed. Uncomment brackets in case of faults.
 
         //fprintf(output, "(");
@@ -455,7 +459,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         if(root_node->left != nullptr)
             PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
 
-        fprintf(output, "%lg", root_node->data);
+        fprintf(output, "{%lg}", root_node->data);
 
         if(root_node->right != nullptr)
             PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
@@ -484,7 +488,8 @@ int Diff::UnloadData(const char* filename, char* current_var)
     }
 
     fprintf(output, "\\documentclass{article}\n\\begin{document}\n\n$$\n\t");
-    PrintBranch(output, source.GetRoot(), current_var);
+    //PrintBranch(output, source.GetRoot(), current_var);
+    PrintBranch(output, dest.GetRoot(), current_var);
     fprintf(output, "\n$$\n\n\\end{document}\n");
 
     fclose(output);
@@ -492,6 +497,7 @@ int Diff::UnloadData(const char* filename, char* current_var)
     QuitFunction();
     return OK;
 }
+
 
 // =================================================
 
@@ -510,6 +516,7 @@ int Diff::UnloadData(const char* filename, char* current_var)
 {
     EnterFunction();
 
+    /*
     if(differentiated_successfully){
         UnloadData(DEFAULT_OUTPUT, variable);
 
@@ -520,10 +527,12 @@ int Diff::UnloadData(const char* filename, char* current_var)
         printf("Differentiating failed\n");
         SetColor(DEFAULT);
     }
+    */
 
     UnloadData(DEFAULT_OUTPUT, variable);
 
-    source.CallGraph();
+    dest.CallGraph();
+    //source.CallGraph();
     CallLatex(DEFAULT_OUTPUT);
 
     QuitFunction();
@@ -531,12 +540,230 @@ int Diff::UnloadData(const char* filename, char* current_var)
 
 // =================================================    BRAIN
 
-Node* Diff::Differetiate(Node* source_root_node, Node* dest_root_node_to_append)
+#define dL *Differetiate(d, node_to_diff->left)
+#define dR *Differetiate(d, node_to_diff->right)
+#define L  *Copy(d, node_to_diff->left)
+#define R  *Copy(d, node_to_diff->right)
+
+Node* diffSIN(Diff& d, Node* node_to_diff)
+{
+    EnterFunction();
+
+    Node* cos = CreateNode();
+    if(cos == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+
+    cos->data_type  = UN_OPERATION;
+    cos->data       = COS_CODE;
+    cos->left       = &L;
+
+    QuitFunction();
+    return cos;
+}
+
+Node* diffCOS(Diff& d, Node* node_to_diff)
+{
+    EnterFunction();
+
+    Node* sin = CreateNode();
+    if(sin == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+    Node* multiplier = CreateNode();
+    if(multiplier == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+
+    sin->data_type          = UN_OPERATION;
+    sin->data               = SIN_CODE;
+    sin->left               = &L;
+
+    multiplier->data_type   = CONSTANT;
+    multiplier->data        = -1;
+
+    QuitFunction();
+    return (*sin) * (*multiplier);
+}
+
+Node* diffTAN(Diff& d, Node* node_to_diff)
+{
+    EnterFunction();
+
+    Node* cos = CreateNode();
+    if(cos == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+    Node* minus_1 = CreateNode();
+    if(minus_1 == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+    Node* const_2 = CreateNode();
+    if(const_2 == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+
+    cos->data_type          = UN_OPERATION;
+    cos->data               = SIN_CODE;
+    cos->left               = &L;
+
+    minus_1->data_type   = CONSTANT;
+    minus_1->data        = -1;
+
+    const_2->data_type   = CONSTANT;
+    const_2->data        = 2;
+
+
+    Node* cos_2 = (*cos) ^ (*const_2);
+
+    QuitFunction();
+    return (*cos_2) ^ (*minus_1);
+}
+
+Node* diffLN (Diff& d, Node* node_to_diff)
+{
+    Node* const_1 = CreateNode();
+    if(const_1 == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+    const_1->data_type = CONSTANT;
+    const_1->data      = 1;
+
+    return (*const_1) / L;
+}
+
+Node* diffEXP(Diff& d, Node* node_to_diff)
+{
+    return Copy(d, node_to_diff);
+}
+
+
+
+
+Node* diffSUM(Diff& d, Node* node_to_diff)
+{
+    return dL + dR;
+}
+
+Node* diffSUB(Diff& d, Node* node_to_diff)
+{
+    return dL - dR;
+}
+
+Node* diffMUL(Diff& d, Node* node_to_diff)
+{
+    return *(dL * R) + *(dR * L);
+}
+
+Node* diffDIV(Diff& d, Node* node_to_diff)
+{
+    Node* sub = *(dL * R) - *(dR * L);
+
+    return (*sub) / (*(R * R));
+}
+
+Node* diffPOW(Diff& d, Node* node_to_diff)
+{
+    EnterFunction();
+
+    Node* new_pow = CreateNode();
+    if(new_pow == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+    Node* pow_mult = CreateNode();
+    if(pow_mult == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created   =====\n");
+        SetColor(DEFAULT);
+
+        return nullptr;
+    }
+
+    new_pow->data_type  = CONSTANT;
+    new_pow->data       = node_to_diff->right->data - 1;
+
+    pow_mult->data_type = CONSTANT;
+    pow_mult->data      = node_to_diff->right->data;
+
+    QuitFunction();
+    return *((*pow_mult) * *(L ^ (*new_pow))) * (dL);
+}
+
+
+
+
+
+
+
+Node* ComplexFunc(Diff& d, Node* node_to_diff, Node* (*how_to_diff_complex)(Diff& d, Node* node_to_diff))
+{
+    return (*how_to_diff_complex(d, node_to_diff)) * (*Differetiate(d, node_to_diff->left));
+}
+
+Node* Copy(Diff& d, Node* node_to_diff)
+{
+    EnterFunction();
+
+    Node* new_node = CreateNode();
+    if(new_node == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Node was not created    =====\n");
+        SetColor(DEFAULT);
+
+        QuitFunction();
+        return nullptr;
+    }
+
+    new_node->data_type = node_to_diff->data_type;
+    new_node->data      = node_to_diff->data;
+    if(node_to_diff->left  != nullptr)
+        new_node->left  = &L;
+    if(node_to_diff->right != nullptr)
+        new_node->right = &R;
+
+    QuitFunction();
+    return new_node;
+}
+
+
+
+Node* Differetiate(Diff& d, Node* source_root_node)
 {
     EnterFunction();
 
     assert(source_root_node != nullptr);
-    assert(dest_root_node_to_append != nullptr);
 
     // =====================================
 
@@ -544,33 +771,105 @@ Node* Diff::Differetiate(Node* source_root_node, Node* dest_root_node_to_append)
     {
         case UN_OPERATION:
         {
-            //
+            // Check first if next is variable or func
+            if(d.source.IsLast(source_root_node)){
+                SetColor(BLUE);
+                printf("Operation without parameters cannot be processed.\n");
+                SetColor(DEFAULT);
+
+                d.differentiated_successfully = false;
+
+                QuitFunction();
+                return nullptr;
+            }else{
+                QuitFunction();
+
+
+                #define OP( exp )                                               \
+                    else if (exp##_CODE == source_root_node->data){             \
+                        QuitFunction();                                         \
+                        return ComplexFunc(d, source_root_node, diff##exp);     \
+                    }
+                if(0){}
+                #include "UnOperations.h"
+                #undef OP( exp )
+            }
             break;
         }
         case BIN_OPERATION:
         {
-            //
+            // Check first if next is variable or func
+            if(d.source.IsLast(source_root_node)){
+                SetColor(BLUE);
+                printf("Operation without parameters cannot be processed.\n");
+                SetColor(DEFAULT);
+
+                d.differentiated_successfully = false;
+
+                QuitFunction();
+                return nullptr;
+            }else{
+                QuitFunction();
+
+
+                #define OP( exp )                                               \
+                    else if (exp##_CODE == source_root_node->data){             \
+                        QuitFunction();                                         \
+                        return diff##exp(d, source_root_node);                  \
+                    }
+                if(0){}
+                #include "BinOperations.h"
+                #undef OP( exp )
+            }
             break;
         }
         case VARIABLE:
         {
-            //
+            // When we see variable with arguments, cry
+            if(!d.source.IsLast(source_root_node)){
+                SetColor(BLUE);
+                printf("Unexpected argument after variable.\n");
+                SetColor(DEFAULT);
+
+                d.differentiated_successfully = false;
+
+                QuitFunction();
+                return nullptr;
+            }else{
+                Node* new_node = CreateNode();
+                new_node->data_type = CONSTANT;
+                new_node->data      = 1;
+
+
+                d.differentiated_successfully = true;
+
+                QuitFunction();
+                return new_node;
+            }
             break;
         }
         case CONSTANT:
         {
             // When we see constant with arguments, cry
-            if(!source.IsLast(source_root_node)){
+            if(!d.source.IsLast(source_root_node)){
                 SetColor(BLUE);
-                printf("Unexpected argumend after constant.\n");
+                printf("Unexpected argument after constant.\n");
                 SetColor(DEFAULT);
 
-                differentiated_successfully = false;
+                d.differentiated_successfully = false;
 
                 QuitFunction();
                 return nullptr;
             }else{
+                Node* new_node = CreateNode();
+                new_node->data_type = CONSTANT;
+                new_node->data      = 0;
 
+
+                d.differentiated_successfully = true;
+
+                QuitFunction();
+                return new_node;
             }
             break;
         }
@@ -580,11 +879,11 @@ Node* Diff::Differetiate(Node* source_root_node, Node* dest_root_node_to_append)
             printf("Strange root detected... data type = %d\n", source_root_node->data_type);
             SetColor(DEFAULT);
 
-            differentiated_successfully = false;
+            d.differentiated_successfully = false;
         }
     }
+
+    //d.dest.CallGraph();
 }
-
-
 
 

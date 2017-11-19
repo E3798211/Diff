@@ -31,20 +31,20 @@ const char MAGENTA[] = "\x1b[95m";      // Notes. If nothing else fits
 extern bool IN;
 
 void SetColor(const char* color);
-void Enter(const char* func_name);
-void Quit (const char* func_name);
+void _Enter(const char* func_name);
+void _Quit (const char* func_name);
 
 #define EnterFunction()                                                         \
     do{                                                                         \
     DEBUG {                                                                     \
-        Enter(__func__);                                                        \
+        _Enter(__func__);                                                       \
     }                                                                           \
     }while(0)                                                                                                                                              \
 
 #define QuitFunction()                                                          \
     do{                                                                         \
     DEBUG {                                                                     \
-        Quit (__func__);                                                        \
+        _Quit (__func__);                                                       \
     }                                                                           \
     }while(0)
 

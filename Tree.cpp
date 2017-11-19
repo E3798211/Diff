@@ -63,7 +63,7 @@ int BuildConnections(FILE* output, Node* branch_root)
 
 // =================================================    Create-function
 
-Node* CreateNode(Tree& tree, Node* parent_node, const bool is_right)
+Node* CreateNode(Node* parent_node, const bool is_right)
 {
     EnterFunction();
 
@@ -74,7 +74,6 @@ Node* CreateNode(Tree& tree, Node* parent_node, const bool is_right)
     try
     {
         new_node = new Node;
-        tree.n_nodes++;
     }
     catch(const std::bad_alloc &ex)
     {
@@ -85,7 +84,6 @@ Node* CreateNode(Tree& tree, Node* parent_node, const bool is_right)
         new_node = nullptr;
 
         PrintVar(new_node);
-        PrintVar(tree.n_nodes);
 
         QuitFunction();
         return nullptr;
@@ -94,7 +92,6 @@ Node* CreateNode(Tree& tree, Node* parent_node, const bool is_right)
     new_node->parent   = parent_node;
     new_node->is_right = is_right;
 
-    PrintVar(tree.n_nodes);
     PrintVar(parent_node);
     PrintVar(is_right);
 
@@ -324,11 +321,14 @@ int Tree::DeleteBranch(Node* branch_root, int rec_depth, bool right)
     if((branch_root)->right != nullptr)
         DeleteBranch((branch_root)->right, rec_depth + 1, true);
 
+
     if(branch_root != root){
+    /*
         if(branch_root->is_right)
             branch_root->parent->right = nullptr;
         else
             branch_root->parent->left  = nullptr;
+    */
     }
     else{
         root = nullptr;
@@ -376,3 +376,38 @@ int Tree::CallGraph()
     return system(command);
 }
 
+
+// =========================================    Say "NO!" to copy-paste!
+
+#define Operator( op , name )                   \
+Node* operator op (Node &left, Node &right)     \
+{                                               \
+    EnterFunction();                            \
+                                                \
+    Node* new_node = CreateNode();              \
+                                                \
+    if(new_node == nullptr){                    \
+        SetColor(RED);                          \
+        DEBUG printf("=====   Node not created   =====\n"); \
+        SetColor(DEFAULT);                      \
+                                                \
+        QuitFunction();                         \
+        return nullptr;                         \
+    }                                           \
+                                                \
+    new_node->data_type = BIN_OPERATION;        \
+    new_node->data      = name##_CODE;          \
+    new_node->left      = &left;                \
+    new_node->right     = &right;               \
+                                                \
+    QuitFunction();                             \
+    return new_node;                            \
+}
+
+Operator(+, SUM);
+Operator(-, SUB);
+Operator(*, MUL);
+Operator(/, DIV);
+Operator(^, POW);
+
+#undef Operator( op, name )

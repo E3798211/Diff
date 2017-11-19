@@ -7,7 +7,7 @@ void SetColor(const char* color)
     std::cout << color << "";
 }
 
-void Enter(const char* func_name)
+void _Enter(const char* func_name)
 {
     SetColor(YELLOW);
     std::cout << "\nEntered " << func_name << "():\n" << std::endl;
@@ -15,7 +15,7 @@ void Enter(const char* func_name)
     IN = true;
 }
 
-void Quit (const char* func_name)
+void _Quit (const char* func_name)
 {
     SetColor(YELLOW);
     std::cout << "\nQuited " << func_name << "():" << std::endl;

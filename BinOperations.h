@@ -1,6 +1,6 @@
 
 OP(SUM)
 OP(SUB)
-OP(MULT)
+OP(MUL)
 OP(DIV)
 OP(POW)

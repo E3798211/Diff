@@ -2,12 +2,13 @@
 OP(SIN)
 OP(COS)
 OP(TAN)
+/*
 OP(CTAN)
 
 OP(ASIN)
 OP(ACOS)
 OP(ATAN)
 OP(ACTN)
-
+*/
 OP(LN)
 OP(EXP)

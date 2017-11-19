@@ -12,50 +12,6 @@ const char DEFAULT_OUTPUT[] = "outdef.txt";
 
 // =================================================
 
-enum EQUATION_PARTS {
-        VARIABLE = 1,
-        CONSTANT = 2,
-    UN_OPERATION = 3,
-    BIN_OPERATION = 4,
-
-    UNEXPECTED
-};
-
-enum UN_OPERATION_CODES {
-    #define OP( exp ) exp##_CODE ,
-    #include "UnOperations.h"
-    #undef OP
-    MAX_UN_CODE
-};
-
-enum BIN_OPERATION_CODES {
-    #define OP( exp ) exp##_CODE ,
-    #include "BinOperations.h"
-    #undef OP
-    MAX_BIN_CODE
-};
-
-const char  SUM[] = "+";
-const char  SUB[] = "-";
-const char MULT[] = "*";
-const char  DIV[] = "/";
-const char  POW[] = "^";
-
-const char  SIN[] = "sin";
-const char  COS[] = "cos";
-const char  TAN[] = "tan";
-const char CTAN[] = "ctan";
-
-const char ASIN[] = "asin";
-const char ACOS[] = "acos";
-const char ATAN[] = "atan";
-const char ACTN[] = "actn";
-
-const char   LN[] = "ln";
-const char  EXP[] = "exp";
-
-// =================================================
-
 class Diff {
 //private:
 public:
@@ -135,6 +91,30 @@ public:
     */
     int UnloadData(const char* filename, char* current_var);
 
+
+    /// Differentiates complex functions
+    /**
+        \param [in] node_to_diff    Node to be differented
+        \param [in] how_to_diff_complex     Pointer to the fuction to diff this node
+    */
+    //Node* ComplexFunc(Node* node_to_diff, Node* (Diff::*how_to_diff_complex)(Node* node_to_diff));
+    Node* ComplexFunc(Diff& d, Node* node_to_diff, Node* (*how_to_diff_complex)(Node* node_to_diff));
+
+    friend Node* Copy(Diff& d, Node* node_to_copy);
+
+    friend Node* diffSIN(Diff& d, Node* node_to_diff);
+    friend Node* diffCOS(Diff& d, Node* node_to_diff);
+    friend Node* diffTAN(Diff& d, Node* node_to_diff);
+    friend Node* diffLN (Diff& d, Node* node_to_diff);
+    friend Node* diffEXP(Diff& d, Node* node_to_diff);
+
+    friend Node* diffSUM(Diff& d, Node* node_to_diff);
+    friend Node* diffSUB(Diff& d, Node* node_to_diff);
+    friend Node* diffMUL(Diff& d, Node* node_to_diff);
+    friend Node* diffDIV(Diff& d, Node* node_to_diff);
+    friend Node* diffPOW(Diff& d, Node* node_to_diff);
+
+
 public:
     /// Constructor
     /**
@@ -147,7 +127,7 @@ public:
     ~Diff();
 
     /// Differentiates tree
-    Node* Differetiate(Node* source_root_node, Node* dest_root_node_to_append);
+    friend Node* Differetiate(Diff& d, Node* source_root_node);
 };
 
 
@@ -158,6 +138,8 @@ public:
     \param [in, out] data           Data to be cleared
 */
 char* ClearData(const char* data);
+
+
 
 
 
