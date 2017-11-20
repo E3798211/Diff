@@ -395,7 +395,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         #define OP( exp )\
             else if ( exp##_CODE == root_node->data )                           \
             {                                                                   \
-                fprintf(output, "{%s(", exp );                                  \
+                fprintf(output, "{%s", exp );                                  \
             }
 
         if(0){}
@@ -407,7 +407,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         if(root_node->left != nullptr)
             PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
 
-        fprintf(output, ")}");
+        fprintf(output, "}");
 
     }else if (root_node->data_type == BIN_OPERATION){
 
@@ -492,6 +492,13 @@ int Diff::UnloadData(const char* filename, char* current_var)
     PrintBranch(output, dest.GetRoot(), current_var);
     fprintf(output, "\n$$\n\n\\end{document}\n");
 
+    /*
+    fprintf(output, "\\documentclass{article}\n\\begin{document}\n\n\\begin{eqnarray}\n\t");
+    //PrintBranch(output, source.GetRoot(), current_var);
+    PrintBranch(output, dest.GetRoot(), current_var);
+    fprintf(output, "\n\\end{eqnarray}\n\n\\end{document}\n");
+    */
+
     fclose(output);
 
     QuitFunction();
@@ -534,6 +541,8 @@ int Diff::UnloadData(const char* filename, char* current_var)
 int Diff::TakeDiff()
 {
     dest.root = Differetiate(*this, source.GetRoot());
+
+    Optimize();
     //a.dest.CallGraph();
 
     return OK;
@@ -545,18 +554,22 @@ int Diff::TakeDiff()
 #define L  *Copy(d, node_to_diff->left)
 #define R  *Copy(d, node_to_diff->right)
 
+#define NEW( name )                                             \
+    CreateNode();                                               \
+    if( name == nullptr){                                       \
+        SetColor(RED);                                          \
+        DEBUG printf("=====   Node was not created   =====\n"); \
+        SetColor(DEFAULT);                                      \
+                                                                \
+        return nullptr;                                         \
+    }
+
+
 Node* diffSIN(Diff& d, Node* node_to_diff)
 {
     EnterFunction();
 
-    Node* cos = CreateNode();
-    if(cos == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
+    Node* cos = NEW(cos);
 
     cos->data_type  = UN_OPERATION;
     cos->data       = COS_CODE;
@@ -570,22 +583,8 @@ Node* diffCOS(Diff& d, Node* node_to_diff)
 {
     EnterFunction();
 
-    Node* sin = CreateNode();
-    if(sin == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
-    Node* multiplier = CreateNode();
-    if(multiplier == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
+    Node* sin = NEW(sin);
+    Node* multiplier = NEW(multiplier);
 
     sin->data_type          = UN_OPERATION;
     sin->data               = SIN_CODE;
@@ -602,30 +601,9 @@ Node* diffTAN(Diff& d, Node* node_to_diff)
 {
     EnterFunction();
 
-    Node* cos = CreateNode();
-    if(cos == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
-    Node* minus_1 = CreateNode();
-    if(minus_1 == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
-    Node* const_2 = CreateNode();
-    if(const_2 == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
+    Node* cos = NEW(cos);
+    Node* minus_1 = NEW(minus_1);
+    Node* const_2 = NEW(const_2);
 
     cos->data_type          = UN_OPERATION;
     cos->data               = SIN_CODE;
@@ -646,14 +624,7 @@ Node* diffTAN(Diff& d, Node* node_to_diff)
 
 Node* diffLN (Diff& d, Node* node_to_diff)
 {
-    Node* const_1 = CreateNode();
-    if(const_1 == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
+    Node* const_1 = NEW(const_1);
     const_1->data_type = CONSTANT;
     const_1->data      = 1;
 
@@ -694,22 +665,8 @@ Node* diffPOW(Diff& d, Node* node_to_diff)
 {
     EnterFunction();
 
-    Node* new_pow = CreateNode();
-    if(new_pow == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
-    Node* pow_mult = CreateNode();
-    if(pow_mult == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created   =====\n");
-        SetColor(DEFAULT);
-
-        return nullptr;
-    }
+    Node* new_pow   = NEW(new_pow);
+    Node* pow_mult  = NEW(pow_mult);
 
     new_pow->data_type  = CONSTANT;
     new_pow->data       = node_to_diff->right->data - 1;
@@ -724,9 +681,6 @@ Node* diffPOW(Diff& d, Node* node_to_diff)
 
 
 
-
-
-
 Node* ComplexFunc(Diff& d, Node* node_to_diff, Node* (*how_to_diff_complex)(Diff& d, Node* node_to_diff))
 {
     return (*how_to_diff_complex(d, node_to_diff)) * (*Differetiate(d, node_to_diff->left));
@@ -736,18 +690,11 @@ Node* Copy(Diff& d, Node* node_to_diff)
 {
     EnterFunction();
 
-    Node* new_node = CreateNode();
-    if(new_node == nullptr){
-        SetColor(RED);
-        DEBUG printf("=====   Node was not created    =====\n");
-        SetColor(DEFAULT);
-
-        QuitFunction();
-        return nullptr;
-    }
+    Node* new_node = NEW(new_node);
 
     new_node->data_type = node_to_diff->data_type;
     new_node->data      = node_to_diff->data;
+
     if(node_to_diff->left  != nullptr)
         new_node->left  = &L;
     if(node_to_diff->right != nullptr)
@@ -759,9 +706,12 @@ Node* Copy(Diff& d, Node* node_to_diff)
 
 
 
+
 Node* Differetiate(Diff& d, Node* source_root_node)
 {
     EnterFunction();
+
+    if(!d.differentiated_successfully)  return nullptr;
 
     assert(source_root_node != nullptr);
 
@@ -840,9 +790,6 @@ Node* Differetiate(Diff& d, Node* source_root_node)
                 new_node->data_type = CONSTANT;
                 new_node->data      = 1;
 
-
-                d.differentiated_successfully = true;
-
                 QuitFunction();
                 return new_node;
             }
@@ -865,9 +812,6 @@ Node* Differetiate(Diff& d, Node* source_root_node)
                 new_node->data_type = CONSTANT;
                 new_node->data      = 0;
 
-
-                d.differentiated_successfully = true;
-
                 QuitFunction();
                 return new_node;
             }
@@ -885,5 +829,146 @@ Node* Differetiate(Diff& d, Node* source_root_node)
 
     //d.dest.CallGraph();
 }
+
+
+// =================================================    OPTIMIZATION
+
+#define NodeIsConst (branch_root->data_type == CONSTANT)
+#define NodeIsVar   (branch_root->data_type == VARIABLE)
+#define NodeIsBinOp (branch_root->data_type == BIN_OPERATION)
+#define NodeIsUnOp (branch_root->data_type == UN_OPERATION)
+
+int Diff::DeleteObvious (Node* branch_root)
+{
+    //
+}
+
+bool Diff::CountConstants(Node* branch_root)
+{
+    EnterFunction();
+
+    if(!optimized_successfully) return false;
+
+    //if(branch_root == nullptr)  return true;
+    if(NodeIsConst)             return true;
+    if(NodeIsVar  )             return false;
+    if(NodeIsUnOp )             return false;
+
+    // =====================================
+
+    bool  left_is_countable = CountConstants(branch_root->left);
+    bool right_is_countable = CountConstants(branch_root->right);
+
+    PrintVar(left_is_countable);
+    PrintVar(right_is_countable);
+    PrintVar(NodeIsBinOp);
+    PrintVar(branch_root->data_type);
+
+    printf("==================== br_root = %d\n", branch_root);
+
+    if(left_is_countable && right_is_countable && NodeIsBinOp){
+
+        MARK
+
+        double  left_data = 0;
+        double right_data = 0;
+
+        if(branch_root->left  != nullptr)    left_data  = branch_root->left ->data;
+        if(branch_root->right != nullptr)    right_data = branch_root->right->data;
+
+
+        double sum = 0;
+        int data_type = branch_root->data;
+        switch (data_type)
+            {
+            case SUM_CODE:
+                {
+                    sum = left_data + right_data;
+                    PrintVar(sum);
+                    break;
+                }
+            case SUB_CODE:
+                {
+                    sum = left_data - right_data;
+                    PrintVar(sum);
+                    break;
+                }
+            case MUL_CODE:
+                {
+                    sum = left_data * right_data;
+                    PrintVar(sum);
+                    break;
+                }
+            case DIV_CODE:
+                {
+                    sum = left_data / right_data;
+                    PrintVar(sum);
+                    break;
+                }
+            case POW_CODE:
+                {
+                    sum = pow(left_data, right_data);
+                    PrintVar(sum);
+                    break;
+                }
+            default:
+                {
+                    SetColor(RED);
+                    printf("=====   Unexpected problem   =====\n");
+                    SetColor(DEFAULT);
+
+                    QuitFunction();
+                    return false;
+                }
+            }
+
+        branch_root->data      = sum;
+        branch_root->data_type = CONSTANT;
+
+        delete branch_root->left;
+        branch_root->left  = nullptr;
+
+        delete branch_root->right;
+        branch_root->right = nullptr;
+
+        QuitFunction();
+        return true;
+    }else{
+        QuitFunction();
+        return false;
+    }
+}
+
+
+
+
+
+int Diff::Optimize()
+{
+    EnterFunction();
+
+    do{
+        diff_optimized = 0;
+
+        DeleteObvious (dest.GetRoot());
+        CountConstants(dest.GetRoot());
+
+        // optimized_successfully is changed inside DeleteObvious() and CountConstants()
+        if(!optimized_successfully){
+            SetColor(RED);
+            printf("=====   Could not optimize derivative. Errors occured.   =====\n");
+            SetColor(DEFAULT);
+
+            QuitFunction();
+            return OPTIMIZATION_FAILED;
+        }
+    }while(diff_optimized != 0);
+
+    QuitFunction();
+    return OK;
+}
+
+
+
 
 

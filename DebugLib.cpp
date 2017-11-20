@@ -18,7 +18,7 @@ void _Enter(const char* func_name)
 void _Quit (const char* func_name)
 {
     SetColor(YELLOW);
-    std::cout << "\nQuited " << func_name << "():" << std::endl;
+    std::cout << "\nQuited  " << func_name << "():" << std::endl;
     SetColor(DEFAULT);
     IN = false;
 }

@@ -2,6 +2,7 @@
 #define DIFF_H_INCLUDED
 
 #include <ctype.h>
+#include <cmath>
 
 #include "Tree.h"
 
@@ -25,7 +26,16 @@ public:
     char variable[100] = {};
 
     /// Status
-    bool differentiated_successfully = false;
+    bool differentiated_successfully = true;
+
+    /// Status
+    bool optimized_successfully = true;
+
+    /// Status
+    /**
+        Variable's value is 0 if tree is optimized, !0 otherwise
+    */
+    int diff_optimized = 0;
 
     // =============================================
 
@@ -128,6 +138,15 @@ public:
 
     /// Differentiates tree
     friend Node* Differetiate(Diff& d, Node* source_root_node);
+
+    /// Optimizes tree
+    /**
+        Function deletes (*0), (+/- 0), (const + const) etc
+    */
+    int Optimize();
+
+    int DeleteObvious (Node* branch_root);
+    bool CountConstants(Node* branch_root);
 
     /// Takes diff
     int TakeDiff();

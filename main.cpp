@@ -6,7 +6,7 @@
 
 int main()
 {
-    Diff a(DEFAULT_INPUT, "x");
+    Diff a(DEFAULT_INPUT, "  x");
 
     a.TakeDiff();
 }

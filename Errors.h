@@ -2,6 +2,8 @@
 #define ERRORS_H_INCLUDED
 
 enum ErrorCodes {
+    OPTIMIZATION_FAILED = -9,
+
     UNIDENTIFIED_DATA   = -8,
 
     ALLOC_ERROR         = -7,
