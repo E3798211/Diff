@@ -375,13 +375,14 @@ int Diff::LoadData(const char* filename, char* current_var)
     return OK;
 }
 
-int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recursion_depth)
+int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int recursion_depth)
 {
     EnterFunction();
 
     assert(output != nullptr);
     assert(root_node != nullptr);
 
+    PrintVar(root_node);
     PrintVar(root_node->data);
     PrintVar(root_node->data_type);
 
@@ -405,7 +406,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         // =================================================
 
         if(root_node->left != nullptr)
-            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output, */root_node->left, current_var, recursion_depth + 1);
 
         fprintf(output, "}");
 
@@ -414,7 +415,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         fprintf(output, "{(");
 
         if(root_node->left != nullptr)
-            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output,*/ root_node->left, current_var, recursion_depth + 1);
 
         // =================================================    BIN-OPS MACRO-SUBST
 
@@ -431,7 +432,7 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         // =================================================
 
         if(root_node->right != nullptr)
-            PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
+            PrintBranch(/*output, */root_node->right, current_var, recursion_depth + 1);
 
         fprintf(output, ")}");
 
@@ -443,10 +444,10 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         fprintf(output, "%s", current_var);
 
         if(root_node->left != nullptr)
-            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output, */root_node->left, current_var, recursion_depth + 1);
 
         if(root_node->right != nullptr)
-            PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
+            PrintBranch(/*output,*/ root_node->right, current_var, recursion_depth + 1);
 
         //fprintf(output, ")");
 
@@ -457,12 +458,12 @@ int Diff::PrintBranch(FILE* output, Node* root_node, char* current_var, int recu
         //fprintf(output, "(");
 
         if(root_node->left != nullptr)
-            PrintBranch(output, root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output,*/ root_node->left, current_var, recursion_depth + 1);
 
         fprintf(output, "{%lg}", root_node->data);
 
         if(root_node->right != nullptr)
-            PrintBranch(output, root_node->right, current_var, recursion_depth + 1);
+            PrintBranch(/*output, */root_node->right, current_var, recursion_depth + 1);
 
         //fprintf(output, ")");
     }
@@ -489,7 +490,7 @@ int Diff::UnloadData(const char* filename, char* current_var)
 
     fprintf(output, "\\documentclass{article}\n\\begin{document}\n\n$$\n\t");
     //PrintBranch(output, source.GetRoot(), current_var);
-    PrintBranch(output, dest.GetRoot(), current_var);
+    PrintBranch(/*output,*/ dest.GetRoot(), current_var);
     fprintf(output, "\n$$\n\n\\end{document}\n");
 
     /*
@@ -505,6 +506,25 @@ int Diff::UnloadData(const char* filename, char* current_var)
     return OK;
 }
 
+int Diff::SaySomething()
+{
+    EnterFunction();
+
+    srand(seed++);
+
+    fprintf(output, "%s ",  FIRST[rand() % N_FIRST].c_str());
+    fprintf(output, "%s ",  SECOND[rand() % N_SECOND].c_str());
+    fprintf(output, "%s\n", THIRD[rand() % N_THIRD].c_str());
+
+    PrintVar(dest.GetRoot());
+    PrintVar(dest.GetRoot()->data);
+    PrintVar(dest.GetRoot()->data_type);
+    PrintVar(dest.GetRoot()->left);
+    PrintVar(dest.GetRoot()->right);
+
+    QuitFunction();
+    return OK;
+}
 
 // =================================================
 
@@ -516,6 +536,28 @@ int Diff::UnloadData(const char* filename, char* current_var)
 
     LoadData(filename? filename : DEFAULT_INPUT, current_var);
 
+
+    // FOR LAB GEN
+    output = fopen("outdef.txt", "w");
+    if(output == nullptr){
+        SetColor(RED);
+        DEBUG printf("=====   Cannot open file %s   =====\n", filename);
+        SetColor(DEFAULT);
+    }
+
+    fprintf(output, "\\documentclass{article}\n\n\\usepackage[utf8x]{inputenc}\n\n\\usepackage[russian]{babel}\n\n\
+    \\usepackage{geometry}\n\\geometry{left=2cm}\n\\geometry{right=1.5cm}\n\\begin{document}\
+    \
+    В эфире ваша любимая рубрика \"Матан и мазохизм\". Сегодня давайте возьмем производную от этого чудесного выражения:\n\n");
+    fprintf(output, "$$\n");
+    PrintBranch(source.GetRoot(), variable);
+    fprintf(output, "\n$$\n\\newpage\nЧто ж, приступим! Будем есть слона по кусочкам.\n");
+
+    srand(time(0));
+    seed = rand();
+
+    // FOR LAB
+
     QuitFunction();
 }
 
@@ -524,7 +566,12 @@ int Diff::UnloadData(const char* filename, char* current_var)
     EnterFunction();
 
     if(differentiated_successfully){
-        UnloadData(DEFAULT_OUTPUT, variable);
+        //UnloadData(DEFAULT_OUTPUT, variable);
+
+        //PrintBranch(dest.GetRoot(), "x");
+        fprintf(output, "\n\\vspace{1cm}\nНа этом месте, думаю, можно закончить. Можете присылать ваши пожелания, все они будут проигнорированы\n\
+        \n\\end{document}\n\\end\n");
+        fclose(output);
 
         dest.CallGraph();
         CallLatex(DEFAULT_OUTPUT);
@@ -533,6 +580,8 @@ int Diff::UnloadData(const char* filename, char* current_var)
         printf("Differentiating failed\n");
         SetColor(DEFAULT);
     }
+
+
 
     QuitFunction();
 }
@@ -576,6 +625,13 @@ Node* diffSIN(Diff& d, Node* node_to_diff)
     cos->data       = COS_CODE;
     cos->left       = &L;
 
+    d.SaySomething();
+    fprintf(d.output, "$$\n\t");
+    d.PrintBranch(node_to_diff, "x");
+    fprintf(d.output, "~\\Rightarrow~");
+    d.PrintBranch(cos, "x");
+    fprintf(d.output, "\n$$\n");
+
     QuitFunction();
     return cos;
 }
@@ -594,8 +650,18 @@ Node* diffCOS(Diff& d, Node* node_to_diff)
     multiplier->data_type   = CONSTANT;
     multiplier->data        = -1;
 
+    Node* new_node = (*sin) * (*multiplier);
+
+    d.SaySomething();
+    fprintf(d.output, "$$\n\t");
+    d.PrintBranch(node_to_diff, "x");
+    fprintf(d.output, "~\\Rightarrow~");
+    d.PrintBranch(new_node, "x");
+    fprintf(d.output, "\n$$\n");
+
     QuitFunction();
-    return (*sin) * (*multiplier);
+
+    return new_node;
 }
 
 Node* diffTAN(Diff& d, Node* node_to_diff)
@@ -619,8 +685,18 @@ Node* diffTAN(Diff& d, Node* node_to_diff)
 
     Node* cos_2 = (*cos) ^ (*const_2);
 
+    Node* new_node = (*cos_2) ^ (*minus_1);
+
+    d.SaySomething();
+    fprintf(d.output, "$$\n\t");
+    d.PrintBranch(node_to_diff, "x");
+    fprintf(d.output, "~\\Rightarrow~");
+    d.PrintBranch(new_node, "x");
+    fprintf(d.output, "\n$$\n");
+
     QuitFunction();
-    return (*cos_2) ^ (*minus_1);
+
+    return new_node;
 }
 
 Node* diffLN (Diff& d, Node* node_to_diff)
@@ -735,11 +811,18 @@ Node* Differetiate(Diff& d, Node* source_root_node)
             }else{
                 QuitFunction();
 
-
                 #define OP( exp )                                               \
                     else if (exp##_CODE == source_root_node->data){             \
+                        Node* new_node = ComplexFunc(d, source_root_node, diff##exp);   \
+                        d.SaySomething();                                       \
+                        fprintf(d.output, "$$\n\t");                            \
+                        d.PrintBranch(source_root_node, "x");                   \
+                        fprintf(d.output, "~\\Rightarrow~");                     \
+                        d.PrintBranch(new_node, "x");                           \
+                        fprintf(d.output, "\n$$\n");                            \
+                                                                                \
                         QuitFunction();                                         \
-                        return ComplexFunc(d, source_root_node, diff##exp);     \
+                        return  new_node;                                       \
                     }
                 if(0){}
                 #include "UnOperations.h"
@@ -762,11 +845,18 @@ Node* Differetiate(Diff& d, Node* source_root_node)
             }else{
                 QuitFunction();
 
-
                 #define OP( exp )                                               \
                     else if (exp##_CODE == source_root_node->data){             \
+                        Node* new_node = diff##exp(d, source_root_node);        \
+                        d.SaySomething();                                       \
+                        fprintf(d.output, "$$\n\t");                            \
+                        d.PrintBranch(source_root_node, "x");                   \
+                        fprintf(d.output, "~\\Rightarrow~");                     \
+                        d.PrintBranch(new_node, "x");                           \
+                        fprintf(d.output, "\n$$\n");                            \
+                                                                                \
                         QuitFunction();                                         \
-                        return diff##exp(d, source_root_node);                  \
+                        return new_node;                                        \
                     }
                 if(0){}
                 #include "BinOperations.h"
@@ -791,6 +881,13 @@ Node* Differetiate(Diff& d, Node* source_root_node)
                 new_node->data_type = CONSTANT;
                 new_node->data      = 1;
 
+                d.SaySomething();
+                fprintf(d.output, "$$\n\t");
+                d.PrintBranch(source_root_node, "x");
+                fprintf(d.output, "~\\Rightarrow~");
+                d.PrintBranch(new_node, "x");
+                fprintf(d.output, "\n$$\n");
+
                 QuitFunction();
                 return new_node;
             }
@@ -812,6 +909,13 @@ Node* Differetiate(Diff& d, Node* source_root_node)
                 Node* new_node = CreateNode();
                 new_node->data_type = CONSTANT;
                 new_node->data      = 0;
+
+                d.SaySomething();
+                fprintf(d.output, "$$\n\t");
+                d.PrintBranch(source_root_node, "x");
+                fprintf(d.output, "~\\Rightarrow~");
+                d.PrintBranch(new_node, "x");
+                fprintf(d.output, "\n$$\n");
 
                 QuitFunction();
                 return new_node;
@@ -1103,7 +1207,14 @@ int Diff::Optimize()
 {
     EnterFunction();
 
+    fprintf(output, "\n\\vspace{1cm}А теперь сделаем несколько абсолютно очевидных преобразований:\n\n");
+
     do{
+        SaySomething();
+        fprintf(output, "$$\n\t");
+        PrintBranch(dest.GetRoot(), "x");
+        fprintf(output, "\n$$\n");
+
         diff_optimized = 0;
 
         DeleteObvious (dest.GetRoot());
