@@ -124,6 +124,25 @@ public:
     friend Node* diffDIV(Diff& d, Node* node_to_diff);
     friend Node* diffPOW(Diff& d, Node* node_to_diff);
 
+    /// Sets node to zero
+    /**
+        Changes node's type to CONSTANT, sets data to zero and deletes left and right
+
+        \param [out] node           Node to be set to zero
+    */
+    int SetToZero(Node* node);
+
+    /// Deletes useless left branch
+    /**
+        \param [out] node           Node to be simplified
+    */
+    int UselessLeftBranch(Node* node);
+
+    /// Deletes useless right branch
+    /**
+        \param [out] node           Node to be simplified
+    */
+    int UselessRightBranch(Node* node);
 
 public:
     /// Constructor

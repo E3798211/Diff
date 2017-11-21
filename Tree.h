@@ -211,6 +211,12 @@ public:
     */
     Node* CreateNode(Node* parent = nullptr, const bool is_right = true);
 
+    /// Deletes branch
+    /**
+        \param [out] branch_root    First node to be cleared
+    */
+    Node* DeleteBranch(Node* branch_root);
+
 
     Node* operator+ (Node &left, Node &right);
     Node* operator- (Node &left, Node &right);

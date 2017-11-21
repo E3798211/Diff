@@ -103,6 +103,24 @@ Node* CreateNode(Node* parent_node, const bool is_right)
     return new_node;
 }
 
+Node* DeleteBranch(Node* branch_root)
+{
+    EnterFunction();
+
+    PrintVar(branch_root);
+
+    if(branch_root == nullptr)  return nullptr;
+
+    if(branch_root->left != nullptr)
+        DeleteBranch(branch_root->left);
+    if(branch_root->right != nullptr)
+        DeleteBranch(branch_root->right);
+
+    delete branch_root;
+
+    QuitFunction();
+}
+
 
 // =================================================    Private
 

@@ -547,6 +547,7 @@ int Diff::TakeDiff()
 
     return OK;
 }
+
 // =================================================    BRAIN
 
 #define dL *Differetiate(d, node_to_diff->left)
@@ -836,11 +837,167 @@ Node* Differetiate(Diff& d, Node* source_root_node)
 #define NodeIsConst (branch_root->data_type == CONSTANT)
 #define NodeIsVar   (branch_root->data_type == VARIABLE)
 #define NodeIsBinOp (branch_root->data_type == BIN_OPERATION)
-#define NodeIsUnOp (branch_root->data_type == UN_OPERATION)
+#define NodeIsUnOp  (branch_root->data_type == UN_OPERATION)
+
+int Diff::SetToZero(Node* node)
+{
+    EnterFunction();
+
+    node->data_type = CONSTANT;
+    node->data = 0;
+
+    if(node->left != nullptr)
+        DeleteBranch(node->left);
+    node->left  = nullptr;
+
+    if(node->right != nullptr)
+        DeleteBranch(node->right);
+    node->right = nullptr;
+
+    QuitFunction();
+    return OK;
+}
+
+int Diff::UselessLeftBranch(Node* node)
+{
+    EnterFunction();
+
+    node->data_type = node->right->data_type;
+    node->data      = node->right->data;
+
+    Node* tmp_left  = node->right->left;
+    Node* tmp_right = node->right->right;
+
+    DeleteBranch(node->left);
+    delete node->right;
+
+    node->left  = tmp_left;
+    node->right = tmp_right;
+
+    QuitFunction();
+    return OK;
+}
+
+int Diff::UselessRightBranch(Node* node)
+{
+    EnterFunction();
+
+    node->data_type = node->left->data_type;
+    node->data      = node->left->data;
+
+    Node* tmp_left  = node->left->left;
+    Node* tmp_right = node->left->right;
+
+    DeleteBranch(node->right);
+    delete node->left;
+
+    node->left  = tmp_left;
+    node->right = tmp_right;
+
+    QuitFunction();
+    return OK;
+}
+
+
 
 int Diff::DeleteObvious (Node* branch_root)
 {
-    //
+    EnterFunction();
+
+    if(branch_root == nullptr){
+        QuitFunction();
+        return OK;
+    }
+
+    DeleteObvious(branch_root->left);
+    DeleteObvious(branch_root->right);
+
+    // =====================================
+
+    if(NodeIsBinOp){
+
+        //diff_optimized++;
+
+        int data = branch_root->data;
+        PrintVar(data);
+
+        switch (data)
+        {
+            MARK
+            case SUM_CODE:
+            {
+                      if(branch_root->left ->data_type == CONSTANT){
+                    if(branch_root->left ->data == 0){
+                        UselessLeftBranch (branch_root);
+                        diff_optimized++;
+                    }
+                }else if(branch_root->right->data_type == CONSTANT){
+                    if(branch_root->right->data == 0){
+                        UselessRightBranch(branch_root);
+                        diff_optimized++;
+                    }
+                }
+                break;
+            }
+            case SUB_CODE:
+            {
+                if(branch_root->right->data_type == CONSTANT){
+                    if(branch_root->right->data == 0){
+                        UselessRightBranch(branch_root);
+                        diff_optimized++;
+                    }
+                }
+                break;
+            }
+            case MUL_CODE:
+            {
+                      if(branch_root->left ->data_type == CONSTANT){
+                          if(branch_root->left ->data == 0){
+                        SetToZero(branch_root);
+                        diff_optimized++;
+                    }else if(branch_root->left ->data == 1){
+                        UselessLeftBranch(branch_root);
+                        diff_optimized++;
+                    }
+                }else if(branch_root->right->data_type == CONSTANT){
+                          if(branch_root->right->data == 0){
+                        SetToZero(branch_root);
+                        diff_optimized++;
+                    }else if(branch_root->right->data == 1){
+                        UselessRightBranch(branch_root);
+                        diff_optimized++;
+                    }
+                }
+                break;
+            }
+            case DIV_CODE:
+            {
+                if(branch_root->right->data_type == CONSTANT){
+                    if(branch_root->right->data == 1){
+                        UselessRightBranch(branch_root);
+                        diff_optimized++;
+                    }
+                }
+                break;
+            }
+            case POW_CODE:
+            {
+                if(branch_root->right->data_type == CONSTANT){
+                    if(branch_root->right->data == 1){
+                        UselessRightBranch(branch_root);
+                        diff_optimized++;
+                    }
+                }
+                break;
+            }
+        }
+
+        QuitFunction();
+        return OK;
+    }else{
+        QuitFunction();
+        return OK;
+    }
 }
 
 bool Diff::CountConstants(Node* branch_root)
@@ -849,7 +1006,6 @@ bool Diff::CountConstants(Node* branch_root)
 
     if(!optimized_successfully) return false;
 
-    //if(branch_root == nullptr)  return true;
     if(NodeIsConst)             return true;
     if(NodeIsVar  )             return false;
     if(NodeIsUnOp )             return false;
@@ -864,11 +1020,9 @@ bool Diff::CountConstants(Node* branch_root)
     PrintVar(NodeIsBinOp);
     PrintVar(branch_root->data_type);
 
-    printf("==================== br_root = %d\n", branch_root);
+    DEBUG printf("==================== br_root = %d\n", branch_root);
 
     if(left_is_countable && right_is_countable && NodeIsBinOp){
-
-        MARK
 
         double  left_data = 0;
         double right_data = 0;
@@ -931,6 +1085,8 @@ bool Diff::CountConstants(Node* branch_root)
         delete branch_root->right;
         branch_root->right = nullptr;
 
+        diff_optimized++;
+
         QuitFunction();
         return true;
     }else{
@@ -962,6 +1118,12 @@ int Diff::Optimize()
             QuitFunction();
             return OPTIMIZATION_FAILED;
         }
+
+
+        PrintVar(diff_optimized);
+        SetColor(MAGENTA);
+        DEBUG printf("Loop in optimization\n");
+        SetColor(DEFAULT);
     }while(diff_optimized != 0);
 
     QuitFunction();
