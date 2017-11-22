@@ -17,7 +17,7 @@
 //
 
 // Comment next line to turn safe-mode off.
-#define _SAFE
+//#define _SAFE
 #ifdef _SAFE
     #define SAFE
 #else
@@ -60,6 +60,13 @@ enum BIN_OPERATION_CODES {
     #include "BinOperations.h"
     #undef OP
     MAX_BIN_CODE
+};
+
+enum PRIORITY {
+    PRI_FOURTH,     // sum, sub
+    PRI_THIRD,      // mul, div
+    PRI_SECOND,     // sin, cos, tan, etc
+    PRI_FIRST       // pow
 };
 
 const char  SUM[] = "+";

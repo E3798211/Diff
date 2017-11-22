@@ -375,7 +375,9 @@ int Diff::LoadData(const char* filename, char* current_var)
     return OK;
 }
 
-int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int recursion_depth)
+// Old PrintBranch()
+/*
+int Diff::PrintBranch(/*FILE* output, Node* root_node, char* current_var, int recursion_depth)
 {
     EnterFunction();
 
@@ -396,7 +398,7 @@ int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int 
         #define OP( exp )\
             else if ( exp##_CODE == root_node->data )                           \
             {                                                                   \
-                fprintf(output, "{%s", exp );                                  \
+                fprintf(output, "{\\%s(", exp );                                  \
             }
 
         if(0){}
@@ -406,16 +408,18 @@ int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int 
         // =================================================
 
         if(root_node->left != nullptr)
-            PrintBranch(/*output, */root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output, root_node->left, current_var, recursion_depth + 1);
 
-        fprintf(output, "}");
+        fprintf(output, ")}");
 
     }else if (root_node->data_type == BIN_OPERATION){
 
+// =================================
+/*
         fprintf(output, "{(");
 
         if(root_node->left != nullptr)
-            PrintBranch(/*output,*/ root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output,*/ /* root_node->left, current_var, recursion_depth + 1);
 
         // =================================================    BIN-OPS MACRO-SUBST
 
@@ -432,9 +436,36 @@ int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int 
         // =================================================
 
         if(root_node->right != nullptr)
-            PrintBranch(/*output, */root_node->right, current_var, recursion_depth + 1);
+            PrintBranch(/*output, *//* root_node->right, current_var, recursion_depth + 1);
 
         fprintf(output, ")}");
+
+// =================================
+
+        fprintf(output, "{(");
+
+        if(root_node->left != nullptr)
+            PrintBranch(/*output, root_node->left, current_var, recursion_depth + 1);
+
+        // =================================================    BIN-OPS MACRO-SUBST
+
+        #define OP( exp )\
+            else if ( exp##_CODE == root_node->data )                           \
+            {                                                                   \
+                fprintf(output, "%s", exp );                                    \
+            }
+
+        if(0){}
+        #include "BinOperations.h"
+        #undef OP
+
+        // =================================================
+
+        if(root_node->right != nullptr)
+            PrintBranch(/*output, * root_node->right, current_var, recursion_depth + 1);
+
+        fprintf(output, ")}");
+
 
     }else if (root_node->data_type == VARIABLE){
         // Varriables do not have arguments but they are still printed. Uncomment brackets in case of faults.
@@ -444,10 +475,10 @@ int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int 
         fprintf(output, "%s", current_var);
 
         if(root_node->left != nullptr)
-            PrintBranch(/*output, */root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output, *root_node->left, current_var, recursion_depth + 1);
 
         if(root_node->right != nullptr)
-            PrintBranch(/*output,*/ root_node->right, current_var, recursion_depth + 1);
+            PrintBranch(/*output, *root_node->right, current_var, recursion_depth + 1);
 
         //fprintf(output, ")");
 
@@ -458,12 +489,180 @@ int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int 
         //fprintf(output, "(");
 
         if(root_node->left != nullptr)
-            PrintBranch(/*output,*/ root_node->left, current_var, recursion_depth + 1);
+            PrintBranch(/*output,* root_node->left, current_var, recursion_depth + 1);
 
         fprintf(output, "{%lg}", root_node->data);
 
         if(root_node->right != nullptr)
-            PrintBranch(/*output, */root_node->right, current_var, recursion_depth + 1);
+            PrintBranch(/*output, *root_node->right, current_var, recursion_depth + 1);
+
+        //fprintf(output, ")");
+    }
+
+    QuitFunction();
+
+    return OK;
+}*/
+
+
+
+
+int Diff::PrintBranch(Node* root_node, char* current_var, int recursion_depth, int prev_priority)
+{
+    EnterFunction();
+
+    assert(output != nullptr);
+    assert(root_node != nullptr);
+
+    PrintVar(root_node);
+    PrintVar(root_node->data);
+    PrintVar(root_node->data_type);
+
+    // Checking if we printing operation, constant or variable:
+    // Un-ops should be printed another way
+
+    if(root_node->data_type == UN_OPERATION){
+        PrintVar(root_node->data_type);
+        // =================================================    UN-OPS MACRO-SUBST
+
+        #define OP( exp )\
+            else if ( exp##_CODE == root_node->data )                           \
+            {                                                                   \
+                fprintf(output, "{\\%s(", exp );                                \
+            }
+
+        if(0){}
+        #include "UnOperations.h"
+        #undef OP
+
+        // =================================================
+
+        if(root_node->left != nullptr)
+            PrintBranch(root_node->left, current_var, recursion_depth + 1);
+
+        fprintf(output, ")}");
+
+    }else if (root_node->data_type == BIN_OPERATION){
+
+        int data = root_node->data;
+        switch (data){
+            case SUM_CODE :{
+                if(prev_priority > PRI_FOURTH)
+                    fprintf(output, "{\\left(");
+
+                if(root_node->left != nullptr)
+                    PrintBranch(root_node->left, current_var, recursion_depth + 1, PRI_FOURTH);
+
+                fprintf(output, "%s", SUM);
+
+                if(root_node->right!= nullptr)
+                    PrintBranch(root_node->right, current_var, recursion_depth + 1, PRI_FOURTH);
+
+                if(prev_priority > PRI_FOURTH)
+                    fprintf(output, "\\right)}");
+                break;
+            }
+            case SUB_CODE :{
+                if(prev_priority > PRI_FOURTH)
+                    fprintf(output, "{\\left(");
+
+                if(root_node->left != nullptr)
+                    PrintBranch(root_node->left, current_var, recursion_depth + 1, PRI_FOURTH);
+
+                fprintf(output, "%s", SUB);
+
+                if(root_node->right!= nullptr)
+                    PrintBranch(root_node->right, current_var, recursion_depth + 1, PRI_FOURTH);
+
+                if(prev_priority > PRI_FOURTH)
+                    fprintf(output, "\\right)}");
+                break;
+            }
+            case MUL_CODE :{
+                if(prev_priority > PRI_THIRD)
+                    fprintf(output, "{\\left(");
+
+                if(root_node->left != nullptr)
+                    PrintBranch(root_node->left, current_var, recursion_depth + 1, PRI_THIRD);
+
+                fprintf(output, "\\cdot ");
+
+                if(root_node->right!= nullptr)
+                    PrintBranch(root_node->right, current_var, recursion_depth + 1, PRI_THIRD);
+
+                if(prev_priority > PRI_THIRD)
+                    fprintf(output, "\\right)}");
+                break;
+            }
+            case DIV_CODE :{
+                if(prev_priority > PRI_THIRD)
+                    fprintf(output, "{\\left(");
+
+                fprintf(output, "\\frac{");
+
+                if(root_node->left != nullptr)
+                    PrintBranch(root_node->left, current_var, recursion_depth + 1, PRI_THIRD);
+
+                fprintf(output, "}{");
+
+                if(root_node->right!= nullptr)
+                    PrintBranch(root_node->right, current_var, recursion_depth + 1, PRI_THIRD);
+
+                fprintf(output, "}");
+
+                if(prev_priority > PRI_THIRD)
+                    fprintf(output, "\\right)}");
+                break;
+            }
+            case POW_CODE :{
+                if(prev_priority == PRI_FIRST)
+                    fprintf(output, "{");
+
+                if(root_node->left != nullptr)
+                    PrintBranch(root_node->left, current_var, recursion_depth + 1, PRI_FIRST);
+                else fprintf(output, "");
+
+                fprintf(output, "^{", POW);
+
+                if(root_node->right!= nullptr)
+                    PrintBranch(root_node->right, current_var, recursion_depth + 1, PRI_FIRST);
+
+                fprintf(output, "}");
+
+                if(prev_priority == PRI_FIRST)
+                    fprintf(output, "}");
+                break;
+            }
+        }
+
+    }else if (root_node->data_type == VARIABLE){
+        // Varriables do not have arguments but they are still printed. Uncomment brackets in case of faults.
+
+        //fprintf(output, "(");
+
+        fprintf(output, "%s", current_var);
+
+        if(root_node->left != nullptr)
+            PrintBranch(root_node->left, current_var, recursion_depth + 1);
+
+        if(root_node->right != nullptr)
+            PrintBranch(root_node->right, current_var, recursion_depth + 1);
+
+        //fprintf(output, ")");
+
+    }else{
+        // Here are constants and something I have forgot about if such things exist
+        // Constants do not have arguments but they are still printed. Uncomment brackets in case of faults.
+
+        //fprintf(output, "(");
+
+        if(root_node->left != nullptr)
+            PrintBranch( root_node->left, current_var, recursion_depth + 1);
+
+        fprintf(output, "{%lg}", root_node->data);
+
+        if(root_node->right != nullptr)
+            PrintBranch(root_node->right, current_var, recursion_depth + 1);
 
         //fprintf(output, ")");
     }
@@ -472,6 +671,12 @@ int Diff::PrintBranch(/*FILE* output,*/ Node* root_node, char* current_var, int 
 
     return OK;
 }
+
+
+
+
+
+
 
 int Diff::UnloadData(const char* filename, char* current_var)
 {
@@ -569,16 +774,23 @@ int Diff::SaySomething()
         //UnloadData(DEFAULT_OUTPUT, variable);
 
         //PrintBranch(dest.GetRoot(), "x");
-        fprintf(output, "\n\\vspace{1cm}\nНа этом месте, думаю, можно закончить. Можете присылать ваши пожелания, все они будут проигнорированы\n\
+        fprintf(output, "\n\\vspace{1cm}\nНа этом, думаю, можно закончить. Можете присылать ваши пожелания, все они будут проигнорированы\n\
         \n\\end{document}\n\\end\n");
         fclose(output);
 
         dest.CallGraph();
+        //source.CallGraph();
         CallLatex(DEFAULT_OUTPUT);
     }else{
         SetColor(BLUE);
         printf("Differentiating failed\n");
         SetColor(DEFAULT);
+
+        dest.CallGraph();
+        CallLatex(DEFAULT_OUTPUT);
+        fprintf(output, "\n\\vspace{1cm}\nНа этом, думаю, можно закончить. Можете присылать ваши пожелания, все они будут проигнорированы\n\
+        \n\\end{document}\n\\end\n");
+        fclose(output);
     }
 
 
@@ -613,6 +825,33 @@ int Diff::TakeDiff()
                                                                 \
         return nullptr;                                         \
     }
+
+bool Diff::ContainsVariables(Node* branch_root)
+{
+    EnterFunction();
+
+    if(branch_root == nullptr){
+        QuitFunction();
+        return false;
+    }
+
+    bool  left_contains = ContainsVariables(branch_root->left);
+    bool right_contains = ContainsVariables(branch_root->right);
+
+    if(left_contains || right_contains || branch_root->data_type == VARIABLE){
+        QuitFunction();
+        return true;
+    }
+
+    QuitFunction();
+    return false;
+}
+
+Node* ComplexFunc(Diff& d, Node* node_to_diff, Node* (*how_to_diff_complex)(Diff& d, Node* node_to_diff))
+{
+    return (*how_to_diff_complex(d, node_to_diff)) * (*Differetiate(d, node_to_diff->left));
+}
+
 
 
 Node* diffSIN(Diff& d, Node* node_to_diff)
@@ -742,26 +981,49 @@ Node* diffPOW(Diff& d, Node* node_to_diff)
 {
     EnterFunction();
 
-    Node* new_pow   = NEW(new_pow);
-    Node* pow_mult  = NEW(pow_mult);
+    if(!d.ContainsVariables(node_to_diff->right)){
+        //Node* new_pow   = NEW(new_pow);
+        Node* pow_mult  = NEW(pow_mult);
+        Node* const_1  =  NEW(const_1);
 
-    new_pow->data_type  = CONSTANT;
-    new_pow->data       = node_to_diff->right->data - 1;
+        /*
+        new_pow->data_type  = CONSTANT;
+        new_pow->data       = node_to_diff->right->data - 1;
+        */
 
-    pow_mult->data_type = CONSTANT;
-    pow_mult->data      = node_to_diff->right->data;
+        const_1->data_type  = CONSTANT;
+        const_1->data       = 1;
 
-    QuitFunction();
-    return *((*pow_mult) * *(L ^ (*new_pow))) * (dL);
+        Node* new_pow = *(Copy(d, node_to_diff->right)) - *(const_1);
+
+        pow_mult->data_type = CONSTANT;
+        pow_mult->data      = node_to_diff->right->data;
+
+        QuitFunction();
+        return *((*pow_mult) * *(L ^ (*new_pow))) * (dL);
+
+    }else{
+        // =====================
+
+
+        printf("\n\n\n\n\n\t\t\t\t\tSUKA\n\n\n\n\n");
+
+        Node* new_ln        = NEW(new_ln);
+
+        new_ln->data_type   = UN_OPERATION;
+        new_ln->data        = LN_CODE;
+
+        new_ln->left        = Copy(d, node_to_diff->left);
+
+        Node* lnf_g = (*new_ln) * R;
+
+        QuitFunction();
+        return (*Copy(d, node_to_diff)) * (*(Differetiate(d, lnf_g)));
+    }
 }
 
 
 
-
-Node* ComplexFunc(Diff& d, Node* node_to_diff, Node* (*how_to_diff_complex)(Diff& d, Node* node_to_diff))
-{
-    return (*how_to_diff_complex(d, node_to_diff)) * (*Differetiate(d, node_to_diff->left));
-}
 
 Node* Copy(Diff& d, Node* node_to_diff)
 {
@@ -1055,7 +1317,7 @@ int Diff::DeleteObvious (Node* branch_root)
             }
             case MUL_CODE:
             {
-                      if(branch_root->left ->data_type == CONSTANT){
+                if(branch_root->left ->data_type == CONSTANT){
                           if(branch_root->left ->data == 0){
                         SetToZero(branch_root);
                         diff_optimized++;
@@ -1207,7 +1469,7 @@ int Diff::Optimize()
 {
     EnterFunction();
 
-    fprintf(output, "\n\\vspace{1cm}А теперь сделаем несколько абсолютно очевидных преобразований:\n\n");
+    fprintf(output, "\n\\vspace{1cm}А теперь сделаем несколько абсолютно очевидных преобразований:\n\n\n\\noindent ");
 
     do{
         SaySomething();

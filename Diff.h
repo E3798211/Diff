@@ -23,12 +23,11 @@ const std::string  FIRST[] = {"Таким образом, ", "И так, ", "Д�
 const std::string SECOND[] = {"нетрудо видеть, что ", "очевидно, что ", "продолжим, ", "забыв обо всем, ", "удерживаясь от сквернословия, ",
                               "не принимая во внимание нашу никчемность, "};
 const std::string  THIRD[] = {"приведем выражение к виду ", "получим ", "придем к этому ", "потратив всего час жизни ",
-                              "блин, лучше бы бухал... ", "наши страдания еще не кончились "};
+                              "наши страдания еще не кончились "};
 
 const int  N_FIRST = 10;
 const int N_SECOND = 6;
-const int  N_THIRD = 6;
-
+const int  N_THIRD = 5;
 // =================================================
 
 class Diff {
@@ -116,7 +115,8 @@ public:
         \param [in] current_var     Current variable
         \param [in] recursion_depth Depth of the recursion
     */
-    int PrintBranch(/*FILE* output, */Node* root_node, char* current_var, int recursion_depth = 0);
+    //int PrintBranch(/*FILE* output, */Node* root_node, char* current_var, int recursion_depth = 0);
+    int PrintBranch(Node* root_node, char* current_var, int recursion_depth = 0, int prev_priority = 0);
 
     /// Loads data to the file
     /**
@@ -136,6 +136,12 @@ public:
     */
     //Node* ComplexFunc(Node* node_to_diff, Node* (Diff::*how_to_diff_complex)(Node* node_to_diff));
     Node* ComplexFunc(Diff& d, Node* node_to_diff, Node* (*how_to_diff_complex)(Node* node_to_diff));
+
+    /// Checks if branch contains variables
+    /**
+        \param [in] branch_root     Pointer to the root of the branch to be checked
+    */
+    bool ContainsVariables(Node* branch_root);
 
     friend Node* Copy(Diff& d, Node* node_to_copy);
 
